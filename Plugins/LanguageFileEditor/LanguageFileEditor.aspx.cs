@@ -4,7 +4,6 @@ using System.IO;
 using System.Linq;
 using System.Web.UI.WebControls;
 using System.Xml;
-using EPiServer.Core;
 using EPiServer.Data.Dynamic;
 using EPiServer.PlugIn;
 using EPiServer.UI;
@@ -20,12 +19,15 @@ namespace EPiServer.Plugins.LanguageFileEditor
     )]
     public partial class LanguageFileEditor : SystemPageBase
     {
+        private string _langPath;
+
         protected bool ShowMessage { get; set; }
 
         protected override void OnPreInit(EventArgs e)
         {
             base.OnPreInit(e);
             Page.MasterPageFile = Configuration.Settings.Instance.UIUrl + "MasterPages/EPiServerUI.Master";
+            _langPath = LanguageLocationService.LanguagePath();
         }
 
         protected override void OnLoad(EventArgs e)
@@ -63,7 +65,7 @@ namespace EPiServer.Plugins.LanguageFileEditor
         {
             hfPatternFilename.Value = filename;
             
-            var filePath = string.Concat(LanguageManager.Instance.Directory, @"\", filename);
+            var filePath = string.Concat(_langPath, @"\", filename);
             var xmlDocument = new XmlDocument();
             using (var fileStream = new FileStream(filePath, FileMode.Open))
             {
@@ -90,7 +92,7 @@ namespace EPiServer.Plugins.LanguageFileEditor
 
         private void RefreshCreateNewArea()
         {
-            ddlCopyFrom.DataSource = ConvertToListItems(GetAllFilenamesFrom(LanguageManager.Instance.Directory));
+            ddlCopyFrom.DataSource = ConvertToListItems(GetAllFilenamesFrom(_langPath));
             ddlCopyFrom.DataBind();
         }
 
@@ -183,7 +185,7 @@ namespace EPiServer.Plugins.LanguageFileEditor
             var backup = store.ItemsAsPropertyBag()
                 .Where(item => backupId.Equals(item["BackupId"] as string)).First();
             var fileContent = backup["Content"] as string;
-            using (var streamWriter = new StreamWriter(string.Concat(LanguageManager.Instance.Directory, @"\", backup["Filename"] as string)))
+            using (var streamWriter = new StreamWriter(string.Concat(_langPath, @"\", backup["Filename"] as string)))
             {
                 streamWriter.Write(fileContent);
             }
@@ -209,6 +211,7 @@ namespace EPiServer.Plugins.LanguageFileEditor
         #region Language file list region
 
         private int _counter;
+
         protected string AlternatingRowClass
         {
             get { return _counter++ % 2 == 0 ? string.Empty : " altRow"; }
@@ -216,7 +219,7 @@ namespace EPiServer.Plugins.LanguageFileEditor
         
         private void RefreshLanguageFileList()
         {
-            rptLanguageFiles.DataSource = GetAllFilenamesFrom(LanguageManager.Instance.Directory);
+            rptLanguageFiles.DataSource = GetAllFilenamesFrom(_langPath);
             rptLanguageFiles.DataBind();
         }
 
@@ -233,7 +236,7 @@ namespace EPiServer.Plugins.LanguageFileEditor
         protected void lbBackUpFile_OnCommand(object sender, CommandEventArgs e)
         {
             var filename = e.CommandArgument.ToString();
-            var filePath = string.Concat(LanguageManager.Instance.Directory, @"\", filename);
+            var filePath = string.Concat(_langPath, @"\", filename);
             var store = typeof(LangFileBackupContainer).GetStore();
             store.Save(new LangFileBackupContainer
                            {
@@ -250,7 +253,7 @@ namespace EPiServer.Plugins.LanguageFileEditor
         protected void lbDeleteFile_OnCommand(object sender, CommandEventArgs e)
         {
             var filename = e.CommandArgument.ToString();
-            File.Delete(string.Concat(LanguageManager.Instance.Directory, @"\", filename));
+            File.Delete(string.Concat(_langPath, @"\", filename));
             RefreshCreateNewArea();
             RefreshLanguageFileList();
             litMessage.Text = string.Format("File {0} was successfully deleted.", filename);

@@ -4,7 +4,6 @@ using System.Text;
 using System.Web;
 using System.Xml;
 using System.Linq;
-using EPiServer.Core;
 using EPiServer.Data.Dynamic;
 using log4net;
 using Newtonsoft.Json.Linq;
@@ -13,12 +12,19 @@ namespace EPiServer.Plugins.LanguageFileEditor
 {
     public class LanguageFileUpdater
     {
+        private readonly string _langPath;
+
         private readonly ILog _auditLogger = LogManager.GetLogger(typeof(LanguageFileUpdater));
         private Dictionary<string, string> TrackingDictionary { get; set; }
         private XmlDocument PatternXmlDocument { get; set; }
         private bool IsNewFile { get; set; }
 
         public JObject NewContent { get; set; }
+
+        public LanguageFileUpdater()
+        {
+            _langPath = LanguageLocationService.LanguagePath();
+        }
 
         public void ExecuteApplyFor(string targetFile, string patternFile)
         {
@@ -100,7 +106,7 @@ namespace EPiServer.Plugins.LanguageFileEditor
 
         private void SaveLanguageFileChangesFor(string filename)
         {
-            var targetFilePath = string.Concat(LanguageManager.Instance.Directory, @"\", filename);
+            var targetFilePath = string.Concat(_langPath, @"\", filename);
             using (var xmlTextWriter = new XmlTextWriter(targetFilePath, Encoding.UTF8))
             {
                 xmlTextWriter.Formatting = Formatting.Indented;
@@ -144,7 +150,7 @@ namespace EPiServer.Plugins.LanguageFileEditor
 
         private static XmlDocument GetPatternXmlDocument(string patternFilename)
         {
-            var patternFilePath = string.Concat(LanguageManager.Instance.Directory, @"\", patternFilename);
+            var patternFilePath = string.Concat(LanguageLocationService.LanguagePath(), @"\", patternFilename);
             if (!File.Exists(patternFilePath)) return null;
             var xmlDocument = new XmlDocument();
             using (var fileStream = new FileStream(patternFilePath, FileMode.Open))

@@ -23,12 +23,14 @@ namespace EPiServer.Plugins.LanguageFileEditor
             var phTextBox = e.Item.FindControl("phTextBox") as PlaceHolder;
             if (phTextBox == null) return;
             var attribute = e.Item.DataItem as XmlAttribute;
+            var toolTip = string.Concat(attribute.OwnerElement.GetNodePath(), ":", attribute.Name);
             var textBox = new TextBox
                               {
                                   ID = "tbAttribute",
                                   CssClass = "attribute",
                                   Text = attribute.Value,
-                                  ToolTip = string.Concat(attribute.OwnerElement.GetNodePath(), ":", attribute.Name)
+                                  ToolTip = toolTip,
+                                  Enabled = toolTip != "/languages/language:id" // don't allow changing language!
                               };
             phTextBox.Controls.Add(textBox);
         }
